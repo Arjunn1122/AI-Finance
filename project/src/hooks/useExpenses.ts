@@ -1,44 +1,46 @@
 import { useState, useEffect } from 'react';
 import { Expense, CreateExpenseDTO } from '../types/expense';
-
-const STORAGE_KEY = 'expenses';
+import { expenseService } from '../services/expenseService';
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  // Load expenses from localStorage on mount
+  // Load expenses from storage on mount
   useEffect(() => {
-    const savedExpenses = localStorage.getItem(STORAGE_KEY);
-    if (savedExpenses) {
-      setExpenses(JSON.parse(savedExpenses));
-    }
+    const loadExpenses = async () => {
+      try {
+        const data = await expenseService.getAllExpenses();
+        setExpenses(data);
+      } catch (error) {
+        console.error('Failed to load expenses:', error);
+      }
+    };
+    loadExpenses();
   }, []);
-
-  // Save expenses to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-  }, [expenses]);
 
   // Add new expense
   const addExpense = async (expenseData: CreateExpenseDTO) => {
-    const newExpense: Expense = {
-      ...expenseData,
-      id: Math.random().toString(36).substr(2, 9), // Simple ID generation
-    };
-    setExpenses(prev => [newExpense, ...prev]);
+    const newExpense = await expenseService.createExpense(expenseData);
+    if (newExpense) {
+      setExpenses(prev => [newExpense, ...prev]);
+    }
   };
 
   // Update expense
   const updateExpense = async (id: string, updates: Partial<CreateExpenseDTO>) => {
-    setExpenses(prev =>
-      prev.map(expense =>
-        expense.id === id ? { ...expense, ...updates } : expense
-      )
-    );
+    const updatedExpense = await expenseService.updateExpense(id, updates);
+    if (updatedExpense) {
+      setExpenses(prev =>
+        prev.map(expense =>
+          expense.id === id ? updatedExpense : expense
+        )
+      );
+    }
   };
 
   // Delete expense
   const deleteExpense = async (id: string) => {
+    await expenseService.deleteExpense(id);
     setExpenses(prev => prev.filter(expense => expense.id !== id));
   };
 

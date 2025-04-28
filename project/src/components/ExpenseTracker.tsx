@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { ExpenseCategory } from '../types/expense';
 import { toast } from 'react-hot-toast';
+import { Plus, Filter, Download } from 'lucide-react';
 
 export function ExpenseTracker() {
-  const { expenses, addExpense, deleteExpense, getTotal } = useExpenses();
+  const { expenses, addExpense, deleteExpense, getTotal, getExpensesByCategory } = useExpenses();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     description: '',
@@ -28,6 +29,7 @@ export function ExpenseTracker() {
         date: formData.date,
       });
 
+      toast.success('Expense added successfully');
       setIsModalOpen(false);
       setFormData({
         description: '',
@@ -40,6 +42,18 @@ export function ExpenseTracker() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExpense(id);
+      toast.success('Expense deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete expense');
+    }
+  };
+
+  const categoryTotals = getExpensesByCategory();
+  const categories = Object.keys(categoryTotals).length;
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -49,7 +63,7 @@ export function ExpenseTracker() {
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
         >
-          <span>+</span> Add Expense
+          <Plus className="h-5 w-5" /> Add Expense
         </button>
       </div>
 
@@ -65,7 +79,7 @@ export function ExpenseTracker() {
         {/* Categories Card */}
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-2">Categories</h2>
-          <div className="text-3xl font-bold text-blue-600">8</div>
+          <div className="text-3xl font-bold text-blue-600">{categories}</div>
           <p className="text-sm text-gray-600 mt-2">Track by category</p>
         </div>
       </div>
@@ -76,40 +90,68 @@ export function ExpenseTracker() {
           <h2 className="text-lg font-semibold">Recent Transactions</h2>
           <div className="flex gap-4">
             <button className="text-blue-600 flex items-center gap-2">
-              <span>Filter</span>
+              <Filter className="h-5 w-5" /> Filter
             </button>
             <button className="text-blue-600 flex items-center gap-2">
-              <span>Export</span>
+              <Download className="h-5 w-5" /> Export
             </button>
           </div>
         </div>
 
         {/* Transaction Table */}
-        <table className="w-full">
-          <thead>
-            <tr className="text-left text-gray-600">
-              <th className="pb-4">DATE</th>
-              <th className="pb-4">DESCRIPTION</th>
-              <th className="pb-4 text-right">AMOUNT</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map(expense => (
-              <tr key={expense.id} className="border-t">
-                <td className="py-4">{new Date(expense.date).toLocaleDateString()}</td>
-                <td className="py-4">{expense.description || expense.category}</td>
-                <td className="py-4 text-right">₹{expense.amount.toFixed(2)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-gray-600">
+                <th className="pb-4">DATE</th>
+                <th className="pb-4">DESCRIPTION</th>
+                <th className="pb-4">CATEGORY</th>
+                <th className="pb-4 text-right">AMOUNT</th>
+                <th className="pb-4"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {expenses.map(expense => (
+                <tr key={expense.id} className="border-t">
+                  <td className="py-4">{new Date(expense.date).toLocaleDateString()}</td>
+                  <td className="py-4">{expense.description || '-'}</td>
+                  <td className="py-4 capitalize">{expense.category}</td>
+                  <td className="py-4 text-right">₹{expense.amount.toFixed(2)}</td>
+                  <td className="py-4 text-right">
+                    <button
+                      onClick={() => handleDelete(expense.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {expenses.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-gray-500">
+                    No expenses recorded yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Add Expense Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Expense</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add New Expense</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Description</label>
@@ -130,6 +172,8 @@ export function ExpenseTracker() {
                   className="w-full p-2 border rounded-lg"
                   placeholder="Enter amount"
                   required
+                  min="0"
+                  step="0.01"
                 />
               </div>
               <div>
@@ -140,7 +184,7 @@ export function ExpenseTracker() {
                   className="w-full p-2 border rounded-lg"
                   required
                 >
-                  <option value="food">Food & Dining</option>
+                  <option value="food">Food</option>
                   <option value="transportation">Transportation</option>
                   <option value="housing">Housing</option>
                   <option value="utilities">Utilities</option>
@@ -160,7 +204,7 @@ export function ExpenseTracker() {
                   required
                 />
               </div>
-              <div className="flex justify-end gap-4 mt-6">
+              <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

@@ -10,26 +10,39 @@ export interface MockStorage {
   removeItem: (key: string) => Promise<{ data: null; error: null }>;
 }
 
-// Create a mock storage if Supabase is not configured
+// Create a mock storage using localStorage
 export const mockStorage: MockStorage = {
-  getItem: (key: string) => {
-    const data = localStorage.getItem(key);
-    return Promise.resolve({ data: data ? JSON.parse(data) : null, error: null });
+  getItem: async (key: string) => {
+    try {
+      const data = localStorage.getItem(key);
+      return { data: data ? JSON.parse(data) : [], error: null };
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+      return { data: [], error: null };
+    }
   },
-  setItem: (key: string, value: any) => {
-    localStorage.setItem(key, JSON.stringify(value));
-    return Promise.resolve({ data: null, error: null });
+  setItem: async (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return { data: null, error: null };
+    } catch (error) {
+      console.error('Error writing to localStorage:', error);
+      return { data: null, error: null };
+    }
   },
-  removeItem: (key: string) => {
-    localStorage.removeItem(key);
-    return Promise.resolve({ data: null, error: null });
+  removeItem: async (key: string) => {
+    try {
+      localStorage.removeItem(key);
+      return { data: null, error: null };
+    } catch (error) {
+      console.error('Error removing from localStorage:', error);
+      return { data: null, error: null };
+    }
   }
 };
 
-// Use Supabase if configured, otherwise use localStorage
-export const storage = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : mockStorage;
+// Always use localStorage regardless of Supabase configuration
+export const storage = mockStorage;
 
 // Helper functions that work with both Supabase and localStorage
 export const createUserProfile = async (userId: string, userData: any) => {
