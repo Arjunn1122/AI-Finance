@@ -1,71 +1,83 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { BarChart2, Brain, Mic, PiggyBank, Calendar, MessageSquare, LogOut } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import toast from 'react-hot-toast';
+import { 
+  BarChart, 
+  Bot,
+  Calendar,
+  DollarSign,
+  Home,
+  LogOut,
+  Mic,
+  PieChart,
+  TrendingUp
+} from 'lucide-react';
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Failed to log out');
-      console.error('Logout error:', error);
-    }
-  };
+  const isActive = (path: string) => location.pathname === path;
 
-  if (!user) {
-    return null;
-  }
+  const navItems = [
+    { path: '/', icon: <Home size={20} />, label: 'Home' },
+    { path: '/expense-tracker', icon: <DollarSign size={20} />, label: 'Expenses' },
+    { path: '/ai-categories', icon: <PieChart size={20} />, label: 'Categories' },
+    { path: '/voice-commands', icon: <Mic size={20} />, label: 'Voice' },
+    { path: '/budget-planning', icon: <BarChart size={20} />, label: 'Budget' },
+    { path: '/future-predictions', icon: <TrendingUp size={20} />, label: 'Predictions' },
+    { path: '/bill-reminders', icon: <Calendar size={20} />, label: 'Reminders' },
+    { path: '/ai-chat', icon: <Bot size={20} />, label: 'AI Chat' },
+  ];
 
   return (
     <nav className="bg-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <BarChart2 className="h-8 w-8 text-blue-500" />
-              <span className="text-2xl font-bold text-blue-500">TrackIt</span>
-            </Link>
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/" className="text-xl font-bold text-blue-600">
+                TrackIt
+              </Link>
+            </div>
+            
+            {user && (
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`inline-flex items-center px-3 py-2 text-sm font-medium ${
+                      isActive(item.path)
+                        ? 'text-blue-600 border-b-2 border-blue-600'
+                        : 'text-gray-500 hover:text-blue-600 hover:border-b-2 hover:border-blue-600'
+                    }`}
+                  >
+                    {item.icon}
+                    <span className="ml-1">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <Link to="/expense-tracker" className="nav-link">
-              <BarChart2 className="h-5 w-5" />
-              <span>Expenses</span>
-            </Link>
-            <Link to="/ai-categories" className="nav-link">
-              <Brain className="h-5 w-5" />
-              <span>AI Categories</span>
-            </Link>
-            <Link to="/voice-commands" className="nav-link">
-              <Mic className="h-5 w-5" />
-              <span>Voice</span>
-            </Link>
-            <Link to="/investments" className="nav-link">
-              <PiggyBank className="h-5 w-5" />
-              <span>Invest</span>
-            </Link>
-            <Link to="/bill-reminders" className="nav-link">
-              <Calendar className="h-5 w-5" />
-              <span>Bills</span>
-            </Link>
-            <Link to="/ai-chat" className="nav-link">
-              <MessageSquare className="h-5 w-5" />
-              <span>AI Chat</span>
-            </Link>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center space-x-1 text-red-500 hover:text-red-600"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
+
+          <div className="flex items-center">
+            {user ? (
+              <button
+                onClick={() => signOut()}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <LogOut size={20} className="mr-2" />
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </div>
